@@ -200,14 +200,3 @@ class UGG():
     def Abilities(self, name, role):
         abilities = stats.stats(self, name=name)[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][4][2]
         return abilities
-
-u = UGG()
-u.Win_rate('annie')
-print(u.Abilities("annie", "mid"))
-print(u.Items("zed", "mid"))
-print(u.Win_rate('annie'))
-print(u.Total_matches('annie'))
-print(u.Pick_rate('annie'))
-print(u.Ban_rate('annie'))
-print(u.Runes("Warwick", 'top'))
-print(u.Shards("Annie", "Mid"))
