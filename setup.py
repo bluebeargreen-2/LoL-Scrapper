@@ -7,4 +7,7 @@ setup(
     author='AlsoSylv',
     packages=find_packages(),
     license = 'MIT',
+    url="https://github.com/AlsoSylv/LoL-Scrapper",
+    zip_safe=True,
+    include_package_data=True,
     )
