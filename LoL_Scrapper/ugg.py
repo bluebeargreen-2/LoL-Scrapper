@@ -1,4 +1,4 @@
-import requests, json, re
+import requests, json, re, asyncio
 from bs4 import BeautifulSoup
 from enum import Enum
         
@@ -62,7 +62,7 @@ class stats():
     def __init__(self):
         self
         
-    def stats(self, name):
+    async def stats(self, name):
         statsVersion = '1.1'
         overviewVersion = '1.5.0'
         baseOverviewUrl = 'https://stats2.u.gg/lol'
@@ -77,6 +77,7 @@ class stats():
         URL = f"{baseOverviewUrl}/{statsVersion}/overview/{uggLoLVersion}/{gameMode}/{championId}/{overviewVersion}.json"
 
         page = requests.get(URL)
+        await asyncio.sleep(1)
         j = page.text
         r = json.loads(j)
         return r
@@ -88,43 +89,47 @@ class UGG():
         self
         
     #Data is gotten in the order 'Win rate, Rank, Pick rate, ban rate, matches' when using find all
-    def Win_rate(self, name, role=''):
+    async def Win_rate(self, name, role=''):
         champ = re.sub(r'\W+', '', name.lower())
         lane = '?role=' + role
         URL = f"https://u.gg/lol/champions/{champ}/build{lane}"
         page = requests.get(URL)
+        await asyncio.sleep(1)
         ugg = BeautifulSoup(page.content, 'html.parser')
         wr = ugg.find_all('div', class_='value')
         return wr[0].text
     
-    def Total_matches(self, name, role=''):
+    async def Total_matches(self, name, role=''):
         champ = re.sub(r'\W+', '', name.lower())
         lane = "?role=" + role
         URL = f"https://u.gg/lol/champions/{champ}/build{lane}"
         page = requests.get(URL)
+        await asyncio.sleep(1)
         ugg = BeautifulSoup(page.content, 'html.parser')
         pr = ugg.find_all('div', class_='value')
         return pr[1].text   
     
-    def Pick_rate(self, name, role=''):
+    async def Pick_rate(self, name, role=''):
         champ = re.sub(r'\W+', '', name.lower())
         lane = "?role=" + role
         URL = f"https://u.gg/lol/champions/{champ}/build{lane}"
         page = requests.get(URL)
+        await asyncio.sleep(1)
         ugg = BeautifulSoup(page.content, 'html.parser')
         pr = ugg.find_all('div', class_='value')
         return pr[2].text
     
-    def Ban_rate(self, name, role=''):
+    async def Ban_rate(self, name, role=''):
         champ = re.sub(r'\W+', '', name.lower())
         lane = "?role=" + role
         URL = f"https://u.gg/lol/champions/{champ}/build{lane}"
         page = requests.get(URL)
+        await asyncio.sleep(1)
         ugg = BeautifulSoup(page.content, 'html.parser')
         br = ugg.find_all('div', class_='value')
         return br[3].text
     
-    def Runes(self, name, role):
+    async def Runes(self, name, role):
             rune_ids = stats.stats(self, name=name)[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][0][4]
             trees = stats.stats(self, name=name)[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][0]
             ddragon_version = requests.get("https://static.u.gg/assets/lol/riot_patch_update/prod/versions.json").json()[0]
