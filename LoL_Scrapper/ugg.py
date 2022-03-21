@@ -139,9 +139,13 @@ class UGG():
             runes_2 = []     
             for y in range(6):
                 for tree in runes_json:
+                    await asyncio.sleep(1)
                     for slots_pos, slots in enumerate(tree["slots"]):
+                        await asyncio.sleep(1)
                         for rune_data in slots["runes"]:
+                            await asyncio.sleep(1)
                             if rune_ids[y] == rune_data["id"]:
+                                await asyncio.sleep(1)
                                 if tree["id"] == trees[2]:
                                     runes_1.insert(slots_pos, rune_data['name'])
                                 elif tree['id'] == trees[3]:
@@ -149,7 +153,7 @@ class UGG():
             runes = runes_1 + runes_2
             return runes
     
-    def Items(self, name, role):
+    async def Items(self, name, role):
         ddragon_version = requests.get("https://static.u.gg/assets/lol/riot_patch_update/prod/versions.json").json()[0]
         dd_items = json.loads(requests.get(f"https://ddragon.leagueoflegends.com/cdn/{ddragon_version}/data/en_US/item.json").text)
         items = stats.stats(self, name=name)[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0]
@@ -175,13 +179,12 @@ class UGG():
                                 else: 
                                     pass
                         except:
-                            pass      
-                
+                            pass
         Items = [start, core, last]
         
         return Items
         
-    def Shards(self, name, role):
+    async def Shards(self, name, role):
         stat_shard_id = stats.stats(self, name=name)[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][8][2]
         stat_shard = []
         for s in range(3):
@@ -201,6 +204,6 @@ class UGG():
                 break
         return stat_shard
     
-    def Abilities(self, name, role):
+    async def Abilities(self, name, role):
         abilities = stats.stats(self, name=name)[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][4][2]
         return abilities
