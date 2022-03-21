@@ -130,8 +130,8 @@ class UGG():
         return br[3].text
     
     async def Runes(self, name, role):
-            rune_ids = stats.stats(self, name=name)[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][0][4]
-            trees = stats.stats(self, name=name)[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][0]
+            rune_ids = await stats.stats(self, name=name)[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][0][4]
+            trees = await stats.stats(self, name=name)[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][0]
             ddragon_version = requests.get("https://static.u.gg/assets/lol/riot_patch_update/prod/versions.json").json()[0]
             dd_runes = requests.get(f"https://ddragon.leagueoflegends.com/cdn/{ddragon_version}/data/en_US/runesReforged.json")
             runes_json = json.loads(dd_runes.text)
@@ -185,7 +185,7 @@ class UGG():
         return Items
         
     async def Shards(self, name, role):
-        stat_shard_id = stats.stats(self, name=name)[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][8][2]
+        stat_shard_id = await stats.stats(self, name=name)[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][8][2]
         stat_shard = []
         for s in range(3):
             if stat_shard_id[s] == shards.Health.value[0]:
@@ -205,5 +205,5 @@ class UGG():
         return stat_shard
     
     async def Abilities(self, name, role):
-        abilities = stats.stats(self, name=name)[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][4][2]
+        abilities = await stats.stats(self, name=name)[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][4][2]
         return abilities
