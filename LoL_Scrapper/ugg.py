@@ -1,8 +1,7 @@
 import requests, json, re
 from bs4 import BeautifulSoup
 from enum import Enum
-from cassiopeia.core.match import Position
-    
+        
 class region(Enum):
     na = "1"
     euw = "2"
