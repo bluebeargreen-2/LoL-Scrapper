@@ -134,13 +134,9 @@ class UGG():
             runes_2 = []     
             for y in range(6):
                 for tree in runes_json:
-                    await asyncio.sleep(1)
                     for slots_pos, slots in enumerate(tree["slots"]):
-                        await asyncio.sleep(1)
                         for rune_data in slots["runes"]:
-                            await asyncio.sleep(1)
                             if rune_ids[y] == rune_data["id"]:
-                                await asyncio.sleep(1)
                                 if tree["id"] == trees[2]:
                                     runes_1.insert(slots_pos, rune_data['name'])
                                 elif tree['id'] == trees[3]:
@@ -206,3 +202,18 @@ class UGG():
     async def Abilities(self, name, role):
         abilities = stats.stats(self, name=name)[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][4][2]
         return abilities
+
+a = asyncio.run(UGG.Abilities("test", "annie", "mid"))
+print(a)
+b = asyncio.run(UGG.Items("test", "Annie", "Mid"))
+print(b)
+c = asyncio.run(UGG.Abilities("self", "annie", "mid"))
+print(c)
+d = asyncio.run(UGG.Win_rate("self", "Annie", "mid"))
+print(d)
+e = asyncio.run(UGG.Pick_rate("self", "Annie", "Mid"))
+print(e)
+f = asyncio.run(UGG.Runes("self", "Annie", "mid"))
+print(f)
+g = asyncio.run(UGG.Shards("self", "Annie", "mid"))
+print(g)
