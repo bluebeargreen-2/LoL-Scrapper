@@ -10,7 +10,7 @@ Examples can be found in ./examples/{site-name}, but should be mostly the same b
 
 Example for [u.gg](https://u.gg/):
 ```python
-ugg.UGG.WinRate(self, "Annie", "Mid")
+print(asyncio.run(ugg.UGG.WinRate(self, "Annie", "Mid")))
 #Returns the current winrate for Annie in the mid lane
 ```
 ## Currently Supports:
