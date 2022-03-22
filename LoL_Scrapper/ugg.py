@@ -62,7 +62,7 @@ class stats():
     def __init__(self):
         self
         
-    async def stats(self, name):
+    def stats(self, name):
         statsVersion = '1.1'
         overviewVersion = '1.5.0'
         baseOverviewUrl = 'https://stats2.u.gg/lol'
@@ -77,7 +77,6 @@ class stats():
         URL = f"{baseOverviewUrl}/{statsVersion}/overview/{uggLoLVersion}/{gameMode}/{championId}/{overviewVersion}.json"
 
         page = requests.get(URL)
-        await asyncio.sleep(1)
         j = page.text
         r = json.loads(j)
         return r
@@ -94,7 +93,6 @@ class UGG():
         lane = '?role=' + role
         URL = f"https://u.gg/lol/champions/{champ}/build{lane}"
         page = requests.get(URL)
-        await asyncio.sleep(1)
         ugg = BeautifulSoup(page.content, 'html.parser')
         wr = ugg.find_all('div', class_='value')
         return wr[0].text
@@ -104,7 +102,6 @@ class UGG():
         lane = "?role=" + role
         URL = f"https://u.gg/lol/champions/{champ}/build{lane}"
         page = requests.get(URL)
-        await asyncio.sleep(1)
         ugg = BeautifulSoup(page.content, 'html.parser')
         pr = ugg.find_all('div', class_='value')
         return pr[1].text   
@@ -114,7 +111,6 @@ class UGG():
         lane = "?role=" + role
         URL = f"https://u.gg/lol/champions/{champ}/build{lane}"
         page = requests.get(URL)
-        await asyncio.sleep(1)
         ugg = BeautifulSoup(page.content, 'html.parser')
         pr = ugg.find_all('div', class_='value')
         return pr[2].text
@@ -124,15 +120,13 @@ class UGG():
         lane = "?role=" + role
         URL = f"https://u.gg/lol/champions/{champ}/build{lane}"
         page = requests.get(URL)
-        await asyncio.sleep(1)
         ugg = BeautifulSoup(page.content, 'html.parser')
         br = ugg.find_all('div', class_='value')
         return br[3].text
     
     async def Runes(self, name, role):
-            await stats.stats
-            rune_ids = stats.stats(self, name=name)[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][0][4]
-            trees = stats.stats(self, name=name)[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][0]
+            rune_ids = stats.stats(name=name)[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][0][4]
+            trees = stats.stats(name=name)[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][0]
             ddragon_version = requests.get("https://static.u.gg/assets/lol/riot_patch_update/prod/versions.json").json()[0]
             dd_runes = requests.get(f"https://ddragon.leagueoflegends.com/cdn/{ddragon_version}/data/en_US/runesReforged.json")
             runes_json = json.loads(dd_runes.text)
@@ -155,8 +149,12 @@ class UGG():
             return runes
     
     async def Items(self, name, role):
-        ddragon_version = requests.get("https://static.u.gg/assets/lol/riot_patch_update/prod/versions.json").json()[0]
-        dd_items = json.loads(requests.get(f"https://ddragon.leagueoflegends.com/cdn/{ddragon_version}/data/en_US/item.json").text)
+        loop = asyncio.get_event_loop()
+        future1 = loop.run_in_executor(None, json.loads, requests.get("https://static.u.gg/assets/lol/riot_patch_update/prod/versions.json").text)
+        ddragon_version = await future1
+        future2 = loop.run_in_executor(None, json.loads, requests.get(f"https://ddragon.leagueoflegends.com/cdn/{ddragon_version[0]}/data/en_US/item.json").text)
+#        ddragon_version = requests.get("https://static.u.gg/assets/lol/riot_patch_update/prod/versions.json").json()[0]
+        dd_items = await future2
         items = stats.stats(self, name=name)[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0]
         start = []
         core = []
@@ -186,7 +184,6 @@ class UGG():
         return Items
         
     async def Shards(self, name, role):
-        await stats.stats
         stat_shard_id = stats.stats(self, name=name)[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][8][2]
         stat_shard = []
         for s in range(3):
@@ -207,6 +204,6 @@ class UGG():
         return stat_shard
     
     async def Abilities(self, name, role):
-        await stats.stats
         abilities = stats.stats(self, name=name)[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][4][2]
         return abilities
+
