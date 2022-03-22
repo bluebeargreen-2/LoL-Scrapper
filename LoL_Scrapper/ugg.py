@@ -125,8 +125,8 @@ class UGG():
         return br[3].text
     
     async def Runes(self, name, role):
-            rune_ids = stats.stats(name=name)[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][0][4]
-            trees = stats.stats(name=name)[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][0]
+            rune_ids = stats.stats(self, name=name)[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][0][4]
+            trees = stats.stats(self, name=name)[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][0]
             ddragon_version = requests.get("https://static.u.gg/assets/lol/riot_patch_update/prod/versions.json").json()[0]
             dd_runes = requests.get(f"https://ddragon.leagueoflegends.com/cdn/{ddragon_version}/data/en_US/runesReforged.json")
             runes_json = json.loads(dd_runes.text)
@@ -206,4 +206,3 @@ class UGG():
     async def Abilities(self, name, role):
         abilities = stats.stats(self, name=name)[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][4][2]
         return abilities
-
