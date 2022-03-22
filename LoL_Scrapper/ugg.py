@@ -62,23 +62,25 @@ class stats():
     def __init__(self):
         self
         
-    def stats(self, name):
+    async def stats(name):
         statsVersion = '1.1'
         overviewVersion = '1.5.0'
         baseOverviewUrl = 'https://stats2.u.gg/lol'
         gameMode = "ranked_solo_5x5"
-        lolVersion = requests.get("https://raw.communitydragon.org/latest/content-metadata.json").json()["version"].split(".")
-        ddragon_version = requests.get("https://static.u.gg/assets/lol/riot_patch_update/prod/versions.json").json()[0]
+        loop = asyncio.get_event_loop()
+        lolVersionFuture = loop.run_in_executor(None, json.loads, requests.get("https://static.u.gg/assets/lol/riot_patch_update/prod/versions.json").text)
+        ddragon_version = (await lolVersionFuture)[0]
+        lolVersion = ddragon_version.split(".")
         championName = name.lower().title().strip()
         champName = re.sub(r'\W+', '', championName)
-        championId = requests.get(f"https://ddragon.leagueoflegends.com/cdn/{ddragon_version}/data/en_US/champion.json").json()["data"][f"{champName}"]["key"]
+        championIdFuture = loop.run_in_executor(None, json.loads, requests.get(f"https://ddragon.leagueoflegends.com/cdn/{ddragon_version}/data/en_US/champion.json").text)
+        championId = (await championIdFuture)["data"][f"{champName}"]["key"]
         uggLoLVersion = lolVersion[0] + '_' + lolVersion[1]
     
         URL = f"{baseOverviewUrl}/{statsVersion}/overview/{uggLoLVersion}/{gameMode}/{championId}/{overviewVersion}.json"
-
-        page = requests.get(URL)
-        j = page.text
-        r = json.loads(j)
+        
+        page = loop.run_in_executor(None, json.loads, requests.get(URL).text)
+        r = await page
         return r
 
 class UGG():
@@ -88,7 +90,7 @@ class UGG():
         self
         
     #Data is gotten in the order 'Win rate, Rank, Pick rate, ban rate, matches' when using find all
-    async def Win_rate(self, name, role=''):
+    async def Win_rate(name, role=''):
         champ = re.sub(r'\W+', '', name.lower())
         lane = '?role=' + role
         URL = f"https://u.gg/lol/champions/{champ}/build{lane}"
@@ -97,7 +99,7 @@ class UGG():
         wr = ugg.find_all('div', class_='value')
         return wr[0].text
     
-    async def Total_matches(self, name, role=''):
+    async def Total_matches(name, role=''):
         champ = re.sub(r'\W+', '', name.lower())
         lane = "?role=" + role
         URL = f"https://u.gg/lol/champions/{champ}/build{lane}"
@@ -106,7 +108,7 @@ class UGG():
         pr = ugg.find_all('div', class_='value')
         return pr[1].text   
     
-    async def Pick_rate(self, name, role=''):
+    async def Pick_rate(name, role=''):
         champ = re.sub(r'\W+', '', name.lower())
         lane = "?role=" + role
         URL = f"https://u.gg/lol/champions/{champ}/build{lane}"
@@ -115,7 +117,7 @@ class UGG():
         pr = ugg.find_all('div', class_='value')
         return pr[2].text
     
-    async def Ban_rate(self, name, role=''):
+    async def Ban_rate(name, role=''):
         champ = re.sub(r'\W+', '', name.lower())
         lane = "?role=" + role
         URL = f"https://u.gg/lol/champions/{champ}/build{lane}"
@@ -124,38 +126,38 @@ class UGG():
         br = ugg.find_all('div', class_='value')
         return br[3].text
     
-    async def Runes(self, name, role):
-            rune_ids = stats.stats(self, name=name)[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][0][4]
-            trees = stats.stats(self, name=name)[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][0]
-            ddragon_version = requests.get("https://static.u.gg/assets/lol/riot_patch_update/prod/versions.json").json()[0]
-            dd_runes = requests.get(f"https://ddragon.leagueoflegends.com/cdn/{ddragon_version}/data/en_US/runesReforged.json")
-            runes_json = json.loads(dd_runes.text)
-            runes_1 = []
-            runes_2 = []     
-            for y in range(6):
-                for tree in runes_json:
-                    for slots_pos, slots in enumerate(tree["slots"]):
-                        for rune_data in slots["runes"]:
-                            if rune_ids[y] == rune_data["id"]:
-                                if tree["id"] == trees[2]:
-                                    runes_1.insert(slots_pos, rune_data['name'])
-                                elif tree['id'] == trees[3]:
-                                    runes_2.insert(slots_pos - 1, rune_data['name'])
-            runes = runes_1 + runes_2
-            return runes
+    async def Runes(name, role):
+        loop  =asyncio.get_event_loop()
+        rune_ids = (await stats.stats(name=name))[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][0][4]
+        trees = (await stats.stats(name=name))[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][0]
+        ddragon_version = requests.get("https://static.u.gg/assets/lol/riot_patch_update/prod/versions.json").json()[0]
+        dd_runes = requests.get(f"https://ddragon.leagueoflegends.com/cdn/{ddragon_version}/data/en_US/runesReforged.json")
+        runes_json = json.loads(dd_runes.text)
+        runes_1 = []
+        runes_2 = [] 
+        for y in range(6):
+            for tree in runes_json:
+                for slots_pos, slots in enumerate(tree["slots"]):
+                    for rune_data in slots["runes"]:
+                        if rune_ids[y] == rune_data["id"]:
+                            if tree["id"] == trees[2]:
+                                runes_1.insert(slots_pos, rune_data['name'])
+                            elif tree['id'] == trees[3]:
+                                runes_2.insert(slots_pos - 1, rune_data['name'])
+        runes = runes_1 + runes_2
+        return runes
     
-    async def Items(self, name, role):
+    async def Items(name, role):
         loop = asyncio.get_event_loop()
         future1 = loop.run_in_executor(None, json.loads, requests.get("https://static.u.gg/assets/lol/riot_patch_update/prod/versions.json").text)
         ddragon_version = await future1
         future2 = loop.run_in_executor(None, json.loads, requests.get(f"https://ddragon.leagueoflegends.com/cdn/{ddragon_version[0]}/data/en_US/item.json").text)
-#        ddragon_version = requests.get("https://static.u.gg/assets/lol/riot_patch_update/prod/versions.json").json()[0]
         dd_items = await future2
-        items = stats.stats(self, name=name)[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0]
+        items = (await stats.stats(name=name))[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0]
         start = []
         core = []
         last = []
-        
+            
         for z in dd_items['data']:
             for y in range(2, 4):
                 for i in items[y][2]:
@@ -179,8 +181,8 @@ class UGG():
         
         return Items
         
-    async def Shards(self, name, role):
-        stat_shard_id = stats.stats(self, name=name)[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][8][2]
+    async def Shards(name, role):
+        stat_shard_id = (await stats.stats(self, name=name))[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][8][2]
         stat_shard = []
         for s in range(3):
             if stat_shard_id[s] == shards.Health.value[0]:
@@ -199,6 +201,6 @@ class UGG():
                 break
         return stat_shard
     
-    async def Abilities(self, name, role):
-        abilities = stats.stats(self, name=name)[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][4][2]
+    async def Abilities(name, role):
+        abilities = (await stats.stats(name=name))[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][4][2]
         return abilities
