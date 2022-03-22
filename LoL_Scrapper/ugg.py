@@ -202,18 +202,3 @@ class UGG():
     async def Abilities(self, name, role):
         abilities = stats.stats(self, name=name)[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][4][2]
         return abilities
-
-a = asyncio.run(UGG.Abilities("test", "annie", "mid"))
-print(a)
-b = asyncio.run(UGG.Items("test", "Annie", "Mid"))
-print(b)
-c = asyncio.run(UGG.Abilities("self", "annie", "mid"))
-print(c)
-d = asyncio.run(UGG.Win_rate("self", "Annie", "mid"))
-print(d)
-e = asyncio.run(UGG.Pick_rate("self", "Annie", "Mid"))
-print(e)
-f = asyncio.run(UGG.Runes("self", "Annie", "mid"))
-print(f)
-g = asyncio.run(UGG.Shards("self", "Annie", "mid"))
-print(g)
