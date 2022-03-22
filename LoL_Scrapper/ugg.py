@@ -182,7 +182,7 @@ class UGG():
         return Items
         
     async def Shards(name, role):
-        stat_shard_id = (await stats.stats(self, name=name))[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][8][2]
+        stat_shard_id = (await stats.stats(name=name))[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][8][2]
         stat_shard = []
         for s in range(3):
             if stat_shard_id[s] == shards.Health.value[0]:
