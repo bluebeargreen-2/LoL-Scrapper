@@ -3,6 +3,8 @@ from functools import lru_cache
 from async_lru import alru_cache
 from bs4 import BeautifulSoup
 from enum import Enum
+from aiohttp import web
+import pprint
         
 class region(Enum):
     na = "1"
@@ -63,6 +65,15 @@ class shards(Enum):
 class stats():
     def __init__(self):
         self
+        
+    @alru_cache(maxsize=1)
+    async def ddragon_data():
+        loop = asyncio.get_event_loop()
+        async with aiohttp.ClientSession() as session:
+            async with session.get("https://static.u.gg/assets/lol/riot_patch_update/prod/versions.json") as lolVersion:
+                ddragon_version = json.loads(await lolVersion.text())[0]
+
+        return ddragon_version
     
     @alru_cache(maxsize=1)
     async def stats(name):
@@ -71,8 +82,7 @@ class stats():
         baseOverviewUrl = 'https://stats2.u.gg/lol'
         gameMode = "ranked_solo_5x5"
         loop = asyncio.get_event_loop()
-        lolVersionFuture = loop.run_in_executor(None, json.loads, requests.get("https://static.u.gg/assets/lol/riot_patch_update/prod/versions.json").text)
-        ddragon_version = (await lolVersionFuture)[0]
+        ddragon_version = (await stats.ddragon_data())
         lolVersion = ddragon_version.split(".")
         championName = name.lower().title().strip()
         champName = re.sub(r'\W+', '', championName)
@@ -97,8 +107,6 @@ class stats():
         return site_array
     
 class UGG():
-    
-
     def __init__(self):
         self
         
@@ -121,15 +129,13 @@ class UGG():
     
     @alru_cache(maxsize=1)
     async def Runes(name, role):
-        loop = asyncio.get_event_loop()
+        ddragon_version = (await stats.ddragon_data())    
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"https://ddragon.leagueoflegends.com/cdn/{ddragon_version}/data/en_US/runesReforged.json") as dd_runes:
+                runes_json = json.loads(await dd_runes.text())
+                
         rune_ids = (await stats.stats(name=name))[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][0][4]
         trees = (await stats.stats(name=name))[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][0]
-        async with aiohttp.ClientSession() as session:
-            async with session.get("https://static.u.gg/assets/lol/riot_patch_update/prod/versions.json") as lolVersion:
-                ddragon_version = json.loads(await lolVersion.text())[0]
-
-        dd_runes = requests.get(f"https://ddragon.leagueoflegends.com/cdn/{ddragon_version}/data/en_US/runesReforged.json")
-        runes_json = json.loads(dd_runes.text)
         runes_1 = []
         runes_2 = [] 
         for y in range(6):
@@ -146,31 +152,31 @@ class UGG():
     
     @alru_cache(maxsize=1)
     async def Items(name, role):
-        loop = asyncio.get_event_loop()
-        future1 = loop.run_in_executor(None, json.loads, requests.get("https://static.u.gg/assets/lol/riot_patch_update/prod/versions.json").text)
-        ddragon_version = await future1
-        future2 = loop.run_in_executor(None, json.loads, requests.get(f"https://ddragon.leagueoflegends.com/cdn/{ddragon_version[0]}/data/en_US/item.json").text)
-        dd_items = await future2
+        ddragon_version = (await stats.ddragon_data())
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"https://ddragon.leagueoflegends.com/cdn/{ddragon_version}/data/en_US/item.json") as dd_items:
+                items_json = json.loads(await dd_items.text())
+        
         items = (await stats.stats(name=name))[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0]
         start = []
         core = []
         last = []
             
-        for z in dd_items['data']:
+        for z in items_json['data']:
             for y in range(2, 4):
                 for i in items[y][2]:
                     if str(i) == z:
                         if y == 2:
-                            start.append(dd_items['data'][z]['name'])
+                            start.append(items_json['data'][z]['name'])
                         else:
-                            core.append(dd_items['data'][z]['name'])
+                            core.append(items_json['data'][z]['name'])
             else:
                 for x in range(3):
                     for y in range(3):
                         try:
                             if str(items[5][x][y][0]) == z:
-                                if dd_items['data'][z]['name'] not in last:
-                                    last.append(dd_items['data'][z]['name'])
+                                if items_json['data'][z]['name'] not in last:
+                                    last.append(items_json['data'][z]['name'])
                                 else: 
                                     pass
                         except:
@@ -202,3 +208,5 @@ class UGG():
     async def Abilities(name, role):
         abilities = (await stats.stats(name=name))[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][4][2]
         return abilities
+    
+print(asyncio.get_event_loop().run_until_complete(UGG.Runes("Annie", "Mid")))
