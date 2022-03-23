@@ -2,7 +2,7 @@
 Tools for getting data from LoL sites like u.gg
 
 ## Setup:
-Install from github using `pip install git+https://github.com/AlsoSylv/RiotBot.git`
+Install from github using `pip install git+https://github.com/AlsoSylv/LoL-Scrapper.git`
 This is designed to work without the usage of LoL API
 
 ## Usage:
