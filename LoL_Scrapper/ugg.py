@@ -208,5 +208,3 @@ class UGG():
     async def Abilities(name, role):
         abilities = (await stats.stats(name=name))[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][4][2]
         return abilities
-    
-print(asyncio.get_event_loop().run_until_complete(UGG.Runes("Annie", "Mid")))
