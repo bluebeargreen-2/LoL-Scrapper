@@ -1,4 +1,6 @@
-import requests, json, re, asyncio
+import requests, json, re, asyncio, time, aiohttp
+from functools import lru_cache
+from async_lru import alru_cache
 from bs4 import BeautifulSoup
 from enum import Enum
         
@@ -61,7 +63,8 @@ class shards(Enum):
 class stats():
     def __init__(self):
         self
-        
+    
+    @alru_cache(maxsize=1)
     async def stats(name):
         statsVersion = '1.1'
         overviewVersion = '1.5.0'
@@ -82,7 +85,17 @@ class stats():
         page = loop.run_in_executor(None, json.loads, requests.get(URL).text)
         r = await page
         return r
-
+    
+    @alru_cache(maxsize=5)
+    async def uugsite(name, role=''):
+        champ = re.sub(r'\W+', '', name.lower())
+        lane = '?role=' + role
+        URL = f"https://u.gg/lol/champions/{champ}/build{lane}"
+        page = requests.get(URL)
+        ugg = BeautifulSoup(page.content, 'html.parser')
+        site_array = ugg.find_all('div', class_='value')
+        return site_array
+    
 class UGG():
     
 
@@ -91,46 +104,30 @@ class UGG():
         
     #Data is gotten in the order 'Win rate, Rank, Pick rate, ban rate, matches' when using find all
     async def Win_rate(name, role=''):
-        champ = re.sub(r'\W+', '', name.lower())
-        lane = '?role=' + role
-        URL = f"https://u.gg/lol/champions/{champ}/build{lane}"
-        page = requests.get(URL)
-        ugg = BeautifulSoup(page.content, 'html.parser')
-        wr = ugg.find_all('div', class_='value')
+        wr  = await stats.uugsite(name, role)
         return wr[0].text
     
     async def Total_matches(name, role=''):
-        champ = re.sub(r'\W+', '', name.lower())
-        lane = "?role=" + role
-        URL = f"https://u.gg/lol/champions/{champ}/build{lane}"
-        page = requests.get(URL)
-        ugg = BeautifulSoup(page.content, 'html.parser')
-        pr = ugg.find_all('div', class_='value')
+        pr = await stats.uugsite(name, role)
         return pr[1].text   
     
     async def Pick_rate(name, role=''):
-        champ = re.sub(r'\W+', '', name.lower())
-        lane = "?role=" + role
-        URL = f"https://u.gg/lol/champions/{champ}/build{lane}"
-        page = requests.get(URL)
-        ugg = BeautifulSoup(page.content, 'html.parser')
-        pr = ugg.find_all('div', class_='value')
+        pr = await stats.uugsite(name, role)
         return pr[2].text
     
     async def Ban_rate(name, role=''):
-        champ = re.sub(r'\W+', '', name.lower())
-        lane = "?role=" + role
-        URL = f"https://u.gg/lol/champions/{champ}/build{lane}"
-        page = requests.get(URL)
-        ugg = BeautifulSoup(page.content, 'html.parser')
-        br = ugg.find_all('div', class_='value')
+        br = await stats.uugsite(name, role)
         return br[3].text
     
+    @alru_cache(maxsize=1)
     async def Runes(name, role):
-        loop  =asyncio.get_event_loop()
+        loop = asyncio.get_event_loop()
         rune_ids = (await stats.stats(name=name))[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][0][4]
         trees = (await stats.stats(name=name))[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][0]
-        ddragon_version = requests.get("https://static.u.gg/assets/lol/riot_patch_update/prod/versions.json").json()[0]
+        async with aiohttp.ClientSession() as session:
+            async with session.get("https://static.u.gg/assets/lol/riot_patch_update/prod/versions.json") as lolVersion:
+                ddragon_version = json.loads(await lolVersion.text())[0]
+
         dd_runes = requests.get(f"https://ddragon.leagueoflegends.com/cdn/{ddragon_version}/data/en_US/runesReforged.json")
         runes_json = json.loads(dd_runes.text)
         runes_1 = []
@@ -147,6 +144,7 @@ class UGG():
         runes = runes_1 + runes_2
         return runes
     
+    @alru_cache(maxsize=1)
     async def Items(name, role):
         loop = asyncio.get_event_loop()
         future1 = loop.run_in_executor(None, json.loads, requests.get("https://static.u.gg/assets/lol/riot_patch_update/prod/versions.json").text)
@@ -204,3 +202,8 @@ class UGG():
     async def Abilities(name, role):
         abilities = (await stats.stats(name=name))[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][4][2]
         return abilities
+    
+print(asyncio.run(UGG.Runes("Annie", "Mid")))
+print(asyncio.run(UGG.Items("Annie", "Mid")))
+print(asyncio.run(UGG.Runes("Annie", "Mid")))
+print(asyncio.run(UGG.Runes("Annie", "Mid")))
