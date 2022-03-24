@@ -60,8 +60,7 @@ class shards(Enum):
     AS = ["5005", "Attack Speed"]
     AH = ["5007", "Ability Haste"]
     AF = ["5008", "Adpative Force"]
-    
-    
+
 class stats():
     def __init__(self):
         self
@@ -86,15 +85,17 @@ class stats():
         lolVersion = ddragon_version.split(".")
         championName = name.lower().title().strip()
         champName = re.sub(r'\W+', '', championName)
-        championIdFuture = loop.run_in_executor(None, json.loads, requests.get(f"https://ddragon.leagueoflegends.com/cdn/{ddragon_version}/data/en_US/champion.json").text)
-        championId = (await championIdFuture)["data"][f"{champName}"]["key"]
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"https://ddragon.leagueoflegends.com/cdn/{ddragon_version}/data/en_US/champion.json") as champJson:
+                championId = json.loads(await champJson.text())["data"][f"{champName}"]["key"]
         uggLoLVersion = lolVersion[0] + '_' + lolVersion[1]
     
-        URL = f"{baseOverviewUrl}/{statsVersion}/overview/{uggLoLVersion}/{gameMode}/{championId}/{overviewVersion}.json"
-        
-        page = loop.run_in_executor(None, json.loads, requests.get(URL).text)
-        r = await page
-        return r
+ #       URL = f"{baseOverviewUrl}/{statsVersion}/overview/{uggLoLVersion}/{gameMode}/{championId}/{overviewVersion}.json"
+        async with aiohttp.ClientSession() as session2:
+            async with session2.get(f"{baseOverviewUrl}/{statsVersion}/overview/{uggLoLVersion}/{gameMode}/{championId}/{overviewVersion}.json") as URL:
+                page = json.loads(await URL.text())
+ #       page = loop.run_in_executor(None, json.loads, requests.get(URL).text)
+        return page
     
     @alru_cache(maxsize=5)
     async def uugsite(name, role=''):
@@ -137,7 +138,8 @@ class UGG():
         rune_ids = (await stats.stats(name=name))[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][0][4]
         trees = (await stats.stats(name=name))[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][0]
         runes_1 = []
-        runes_2 = [] 
+        runes_2 = []
+        
         for y in range(6):
             for tree in runes_json:
                 for slots_pos, slots in enumerate(tree["slots"]):
@@ -147,6 +149,7 @@ class UGG():
                                 runes_1.insert(slots_pos, rune_data['name'])
                             elif tree['id'] == trees[3]:
                                 runes_2.insert(slots_pos - 1, rune_data['name'])
+                                
         runes = runes_1 + runes_2
         return runes
     
@@ -185,6 +188,7 @@ class UGG():
         
         return Items
         
+    @alru_cache(maxsize=1)
     async def Shards(name, role):
         stat_shard_id = (await stats.stats(name=name))[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][8][2]
         stat_shard = []
@@ -205,6 +209,7 @@ class UGG():
                 break
         return stat_shard
     
+    @alru_cache(maxsize=5)
     async def Abilities(name, role):
         abilities = (await stats.stats(name=name))[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][4][2]
         return abilities
