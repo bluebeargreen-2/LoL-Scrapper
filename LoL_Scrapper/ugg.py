@@ -1,23 +1,21 @@
-import requests, json, re, asyncio, time, aiohttp
-from functools import lru_cache
+import requests, json, re, asyncio, time, aiohttp, threading
 from async_lru import alru_cache
 from bs4 import BeautifulSoup
 from enum import Enum
 from aiohttp import web
-import pprint
         
 class region(Enum):
-    na = "1"
-    euw = "2"
+    na1 = "1"
+    euw1 = "2"
     kr = "3"
-    euna = "4"
-    br = "5"
+    eun1 = "4"
+    br1 = "5"
     las = "6"
-    lan = "7"
-    oce = "8"
+    la2 = "7"
+    oc1 = "8"
     ru = "9"
-    tr = "10"
-    jp = "11"
+    tr1 = "10"
+    jp1 = "11"
     world = "12"
     
 class tiers(Enum):
@@ -31,7 +29,7 @@ class tiers(Enum):
     overall = "8"
     platinum_plus = "10"
     diamond_plus = "11"
-    diamond_two_plus = "12"
+    diamond_2_plus = "12"
     grandmaster = "13"
     master_plus = "14"
     iron = "15"
@@ -98,9 +96,9 @@ class stats():
         return page
     
     @alru_cache(maxsize=5)
-    async def uugsite(name, role=''):
+    async def uugsite(name, role='', rank='platinum_plus', region='world'):
         champ = re.sub(r'\W+', '', name.lower())
-        lane = '?role=' + role
+        lane = "?rank=" + rank.lower() + "&region=" + region.lower() + '&role=' + role.lower()
         URL = f"https://u.gg/lol/champions/{champ}/build{lane}"
         page = requests.get(URL)
         ugg = BeautifulSoup(page.content, 'html.parser')
@@ -112,55 +110,55 @@ class UGG():
         self
         
     #Data is gotten in the order 'Win rate, Rank, Pick rate, ban rate, matches' when using find all
-    async def Win_rate(name, role=''):
+    async def Win_rate(name, role='', rank='platinum_plus', region='world'):
         wr  = await stats.uugsite(name, role)
         return wr[0].text
     
-    async def Total_matches(name, role=''):
+    async def Total_matches(name, role='', rank='platinum_plus', region='world'):
         pr = await stats.uugsite(name, role)
         return pr[1].text   
     
-    async def Pick_rate(name, role=''):
+    async def Pick_rate(name, role='', rank='platinum_plus', region='world'):
         pr = await stats.uugsite(name, role)
         return pr[2].text
     
-    async def Ban_rate(name, role=''):
+    async def Ban_rate(name, role='', rank='platinum_plus', region='world'): 
         br = await stats.uugsite(name, role)
         return br[3].text
     
     @alru_cache(maxsize=1)
-    async def Runes(name, role):
+    async def Runes(name, role, ranks='platinum_plus', regions='world'):
         ddragon_version = (await stats.ddragon_data())    
         async with aiohttp.ClientSession() as session:
             async with session.get(f"https://ddragon.leagueoflegends.com/cdn/{ddragon_version}/data/en_US/runesReforged.json") as dd_runes:
                 runes_json = json.loads(await dd_runes.text())
                 
-        rune_ids = (await stats.stats(name=name))[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][0][4]
-        trees = (await stats.stats(name=name))[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][0]
+        rune_ids = (await stats.stats(name=name))[region[regions.lower()].value][tiers[ranks.lower()].value][positions[role.lower()].value][0][0][4]
+        trees = (await stats.stats(name=name))[region[regions.lower()].value][tiers[ranks.lower()].value][positions[role.lower()].value][0][0]
         runes_1 = []
         runes_2 = []
         
         for y in range(6):
             for tree in runes_json:
-                for slots_pos, slots in enumerate(tree["slots"]):
-                    for rune_data in slots["runes"]:
-                        if rune_ids[y] == rune_data["id"]:
-                            if tree["id"] == trees[2]:
+                if tree["id"] == trees[2]:
+                    for slots_pos, slots in enumerate(tree["slots"]):
+                        for rune_data in slots["runes"]:
+                            if rune_ids[y] == rune_data["id"]:
                                 runes_1.insert(slots_pos, rune_data['name'])
-                            elif tree['id'] == trees[3]:
+                            elif rune_ids[y] == rune_data["id"]:
                                 runes_2.insert(slots_pos - 1, rune_data['name'])
-                                
+
         runes = runes_1 + runes_2
         return runes
     
     @alru_cache(maxsize=1)
-    async def Items(name, role):
+    async def Items(name, role, ranks='platinum_plus', regions='world'):
         ddragon_version = (await stats.ddragon_data())
         async with aiohttp.ClientSession() as session:
             async with session.get(f"https://ddragon.leagueoflegends.com/cdn/{ddragon_version}/data/en_US/item.json") as dd_items:
                 items_json = json.loads(await dd_items.text())
         
-        items = (await stats.stats(name=name))[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0]
+        items = (await stats.stats(name=name))[region[regions.lower()].value][tiers[ranks.lower()].value][positions[role.lower()].value][0]
         start = []
         core = []
         last = []
@@ -189,8 +187,8 @@ class UGG():
         return Items
         
     @alru_cache(maxsize=1)
-    async def Shards(name, role):
-        stat_shard_id = (await stats.stats(name=name))[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][8][2]
+    async def Shards(name, role, ranks='platinum_plus', regions='world'):
+        stat_shard_id = (await stats.stats(name=name))[region[regions.lower()].value][tiers[ranks.lower()].value][positions[role.lower()].value][0][8][2]
         stat_shard = []
         for s in range(3):
             if stat_shard_id[s] == shards.Health.value[0]:
@@ -210,6 +208,6 @@ class UGG():
         return stat_shard
     
     @alru_cache(maxsize=5)
-    async def Abilities(name, role):
-        abilities = (await stats.stats(name=name))[region.world.value][tiers.platinum_plus.value][positions[role.lower()].value][0][4][2]
+    async def Abilities(name, role, ranks='platinum_plus', regions='world'):
+        abilities = (await stats.stats(name=name))[region[regions.lower()].value][tiers[ranks.lower()].value][positions[role.lower()].value][0][4][2]
         return abilities
