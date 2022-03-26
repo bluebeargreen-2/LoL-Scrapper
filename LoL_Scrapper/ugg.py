@@ -88,11 +88,9 @@ class stats():
                 championId = json.loads(await champJson.text())["data"][f"{champName}"]["key"]
         uggLoLVersion = lolVersion[0] + '_' + lolVersion[1]
     
- #       URL = f"{baseOverviewUrl}/{statsVersion}/overview/{uggLoLVersion}/{gameMode}/{championId}/{overviewVersion}.json"
         async with aiohttp.ClientSession() as session2:
             async with session2.get(f"{baseOverviewUrl}/{statsVersion}/overview/{uggLoLVersion}/{gameMode}/{championId}/{overviewVersion}.json") as URL:
                 page = json.loads(await URL.text())
- #       page = loop.run_in_executor(None, json.loads, requests.get(URL).text)
         return page
     
     @alru_cache(maxsize=5)
