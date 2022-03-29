@@ -28,7 +28,6 @@ async def items(champion: str, role: str):
     item = (await soup(champion, role)).find_all("img", class_="m-1dde13n")
     items = []
     [items.append(entry["alt"]) for entry in item if entry["alt"] not in items]
-    # or entry["alt"] == "Health Potion"
     return items
 
 class mobalytics():
@@ -100,5 +99,3 @@ class mobalytics():
         x = (await soup(champion, role)).find_all("img", class_="m-j7ixa3")
         shards = [x[y]["alt"] for y, yy in enumerate(x)]
         return shards
-    #TODO: Return this as a 2D array of items, instead of just one long string
-print(asyncio.get_event_loop().run_until_complete(mobalytics.shards("Annie", "Mid")))
