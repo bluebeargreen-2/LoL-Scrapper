@@ -15,7 +15,7 @@ print(asyncio.run(ugg.UGG.WinRate(self, "Annie", "Mid")))
 ```
 ## Currently Supports:
 - [X] [U.gg](https://u.gg/)
-- [ ] [Mobalytics.gg](https://mobalytics.gg/)
+- [x] [Mobalytics.gg](https://mobalytics.gg/)
 - [ ] [OP.gg](https://na.op.gg/)
 - [ ] [Champion.gg](https://champion.gg/)
 - [ ] [LoLalytics.com](https://lolalytics.com/)
