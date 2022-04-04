@@ -138,12 +138,13 @@ class UGG():
         
         for y in range(6):
             for tree in runes_json:
-                if tree["id"] == trees[2]:
-                    for slots_pos, slots in enumerate(tree["slots"]):
-                        for rune_data in slots["runes"]:
+                for slots_pos, slots in enumerate(tree["slots"]):
+                    for rune_data in slots["runes"]:
+                        if tree["id"] == trees[2]:
                             if rune_ids[y] == rune_data["id"]:
                                 runes_1.insert(slots_pos, rune_data['name'])
-                            elif rune_ids[y] == rune_data["id"]:
+                        if tree["id"] == trees[3]:
+                            if rune_ids[y] == rune_data["id"]:
                                 runes_2.insert(slots_pos - 1, rune_data['name'])
 
         runes = runes_1 + runes_2
@@ -209,3 +210,5 @@ class UGG():
     async def Abilities(name, role, ranks='platinum_plus', regions='world'):
         abilities = (await stats.stats(name=name))[region[regions.lower()].value][tiers[ranks.lower()].value][positions[role.lower()].value][0][4][2]
         return abilities
+    
+print(asyncio.run(UGG.Runes("Annie", "Mid")))
