@@ -1,4 +1,4 @@
-import requests, json, re, asyncio, aiohttp
+import requests, re, asyncio, aiohttp, time, ujson as json
 from async_lru import alru_cache
 from bs4 import BeautifulSoup
 from enum import Enum
@@ -50,14 +50,6 @@ class data(Enum):
     abilities = "4"
     other_items = "5"
     shards = "8"
-    
-class shards(Enum):
-    Health = ["5001", "Health"]
-    Armor = ["5002", "Armor"]
-    MR = ["5003", "Magic Resistance"]
-    AS = ["5005", "Attack Speed"]
-    AH = ["5007", "Ability Haste"]
-    AF = ["5008", "Adpative Force"]
 
 class stats():
     def __init__(self):
@@ -78,11 +70,9 @@ class stats():
         overviewVersion = '1.5.0'
         baseOverviewUrl = 'https://stats2.u.gg/lol'
         gameMode = "ranked_solo_5x5"
-        loop = asyncio.get_event_loop()
         ddragon_version = (await stats.ddragon_data())
         lolVersion = ddragon_version.split(".")
-        championName = name.lower().title().strip()
-        champName = re.sub(r'\W+', '', championName)
+        champName = re.sub(r'\W+', '', name.lower().title().strip())
         async with aiohttp.ClientSession() as session:
             async with session.get(f"https://ddragon.leagueoflegends.com/cdn/{ddragon_version}/data/en_US/champion.json") as champJson:
                 championId = json.loads(await champJson.text())["data"][f"{champName}"]["key"]
@@ -97,17 +87,19 @@ class stats():
     async def uugsite(name, role='', rank='platinum_plus', region='world'):
         champ = re.sub(r'\W+', '', name.lower())
         lane = "?rank=" + rank.lower() + "&region=" + region.lower() + '&role=' + role.lower()
-        URL = f"https://u.gg/lol/champions/{champ}/build{lane}"
-        page = requests.get(URL)
-        ugg = BeautifulSoup(page.content, 'html.parser')
-        site_array = ugg.find_all('div', class_='value')
-        return site_array
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"https://u.gg/lol/champions/{champ}/build{lane}") as site:
+                ugg_html = await site.text()
+                ugg = BeautifulSoup(ugg_html, 'html.parser')
+                site_array = ugg.find_all('div', class_='value')
+                return site_array
     
 class UGG():
     def __init__(self):
         self
-        
     #Data is gotten in the order 'Win rate, Rank, Pick rate, ban rate, matches' when using find all
+    #We use scraping because this data does not exist in U.GGs JSON files
+    #The underlying array is cached, so well the initial scrape takes a bit, the following uses are quite quick
     async def Win_rate(name, role='', rank='platinum_plus', region='world'):
         wr  = await stats.uugsite(name, role)
         return wr[0].text
@@ -126,7 +118,7 @@ class UGG():
     
     @alru_cache(maxsize=1)
     async def Runes(name, role, ranks='platinum_plus', regions='world'):
-        ddragon_version = (await stats.ddragon_data())    
+        ddragon_version = (await stats.ddragon_data())
         async with aiohttp.ClientSession() as session:
             async with session.get(f"https://ddragon.leagueoflegends.com/cdn/{ddragon_version}/data/en_US/runesReforged.json") as dd_runes:
                 runes_json = json.loads(await dd_runes.text())
@@ -160,8 +152,7 @@ class UGG():
         items = (await stats.stats(name=name))[region[regions.lower()].value][tiers[ranks.lower()].value][positions[role.lower()].value][0]
         start = []
         core = []
-        last = []
-            
+        last_set = set()
         for z in items_json['data']:
             for y in range(2, 4):
                 for i in items[y][2]:
@@ -170,17 +161,15 @@ class UGG():
                             start.append(items_json['data'][z]['name'])
                         else:
                             core.append(items_json['data'][z]['name'])
-            else:
+            else: 
                 for x in range(3):
                     for y in range(3):
                         try:
                             if str(items[5][x][y][0]) == z:
-                                if items_json['data'][z]['name'] not in last:
-                                    last.append(items_json['data'][z]['name'])
-                                else: 
-                                    pass
+                                last_set.add(items_json['data'][z]['name'])            
                         except:
                             pass
+        last = list(last_set)
         Items = [start, core, last]
         
         return Items
@@ -189,21 +178,14 @@ class UGG():
     async def Shards(name, role, ranks='platinum_plus', regions='world'):
         stat_shard_id = (await stats.stats(name=name))[region[regions.lower()].value][tiers[ranks.lower()].value][positions[role.lower()].value][0][8][2]
         stat_shard = []
-        for s in range(3):
-            if stat_shard_id[s] == shards.Health.value[0]:
-                stat_shard.append(shards.Health.value[1])
-            elif stat_shard_id[s] == shards.Armor.value[0]:
-                stat_shard.append(shards.Armor.value[1])
-            elif stat_shard_id[s] == shards.MR.value[0]:
-                stat_shard.append(shards.MR.value[1])
-            elif stat_shard_id[s] == shards.AS.value[0]:
-                stat_shard.append(shards.AS.value[1])
-            elif stat_shard_id[s] == shards.AH.value[0]:
-                stat_shard.append(shards.AH.value[1])
-            elif stat_shard_id[s] == shards.AF.value[0]:
-                stat_shard.append(shards.AF.value[1])
-            else:
-                break
+        for s in stat_shard_id:
+            match s:
+                case "5001" : stat_shard.append("Health")
+                case "5008" : stat_shard.append("Adaptive Force")
+                case "5007" : stat_shard.append("Ability Haste")
+                case "5002" : stat_shard.append("Armor")
+                case "5005" : stat_shard.append("Attack Speed")
+                case "5003" : stat_shard.append("Magic Resist")
         return stat_shard
     
     @alru_cache(maxsize=5)
