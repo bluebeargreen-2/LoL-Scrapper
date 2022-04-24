@@ -92,7 +92,7 @@ class stats():
                 ugg_html = await site.text()
                 ugg = BeautifulSoup(ugg_html, 'lxml')
                 site_array = ugg.find_all('div', class_='value')
-                return site_array
+        return site_array
     
 class UGG():
     def __init__(self):
@@ -101,19 +101,19 @@ class UGG():
     #We use scraping because this data does not exist in U.GGs JSON files
     #The underlying array is cached, so well the initial scrape takes a bit, the following uses are quite quick
     async def Win_rate(name, role='', rank='platinum_plus', region='world'):
-        wr  = await stats.uugsite(name, role)
+        wr  = await stats.uugsite(name, role, rank, region)
         return wr[0].text
     
     async def Total_matches(name, role='', rank='platinum_plus', region='world'):
-        pr = await stats.uugsite(name, role)
+        pr = await stats.uugsite(name, role, rank, region)
         return pr[1].text   
     
     async def Pick_rate(name, role='', rank='platinum_plus', region='world'):
-        pr = await stats.uugsite(name, role)
+        pr = await stats.uugsite(name, role, rank, region)
         return pr[2].text
     
     async def Ban_rate(name, role='', rank='platinum_plus', region='world'): 
-        br = await stats.uugsite(name, role)
+        br = await stats.uugsite(name, role, rank, region)
         return br[3].text
     
     @alru_cache(maxsize=1)
@@ -183,3 +183,4 @@ class UGG():
     async def Abilities(name, role, ranks='platinum_plus', regions='world'):
         abilities = (await stats.stats(name=name))[region[regions.lower()].value][tiers[ranks.lower()].value][positions[role.lower()].value][0][data.abilities.value][2]
         return abilities
+    
