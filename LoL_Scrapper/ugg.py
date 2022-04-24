@@ -1,8 +1,7 @@
-import requests, re, asyncio, aiohttp, time, ujson as json
+import re, aiohttp, ujson as json
 from async_lru import alru_cache
 from bs4 import BeautifulSoup
 from enum import Enum
-from aiohttp import web
         
 class region(Enum):
     na1 = "1"
@@ -149,7 +148,7 @@ class UGG():
         core = []
         last_set = set()
         
-        
+
         for z in items_json['data']:
             [start.append(items_json['data'][z]['name']) for i in items[2][2] if str(i) == z]
             [core.append(items_json['data'][z]['name']) for i in items[3][2] if str(i) == z]
@@ -171,12 +170,12 @@ class UGG():
         stat_shard = []
         for s in stat_shard_id:
             match s:
-                case "5001" : stat_shard.append("Health")
-                case "5008" : stat_shard.append("Adaptive Force")
-                case "5007" : stat_shard.append("Ability Haste")
-                case "5002" : stat_shard.append("Armor")
-                case "5005" : stat_shard.append("Attack Speed")
-                case "5003" : stat_shard.append("Magic Resist")
+                case "5001": stat_shard.append("Health")
+                case "5008": stat_shard.append("Adaptive Force")
+                case "5007": stat_shard.append("Ability Haste")
+                case "5002": stat_shard.append("Armor")
+                case "5005": stat_shard.append("Attack Speed")
+                case "5003": stat_shard.append("Magic Resist")
         return stat_shard
     
     @alru_cache(maxsize=5)
