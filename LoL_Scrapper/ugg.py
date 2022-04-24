@@ -1,8 +1,7 @@
-import requests, re, asyncio, aiohttp, time, ujson as json
+import re, aiohttp, ujson as json
 from async_lru import alru_cache
 from bs4 import BeautifulSoup
 from enum import Enum
-from aiohttp import web
         
 class region(Enum):
     na1 = "1"
