@@ -3,7 +3,6 @@ from async_lru import alru_cache
 from bs4 import BeautifulSoup
 from enum import Enum
 from aiohttp import web
-from lib2to3.pgen2.token import ASYNC
         
 class region(Enum):
     na1 = "1"
