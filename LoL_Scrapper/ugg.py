@@ -3,6 +3,7 @@ from async_lru import alru_cache
 from bs4 import BeautifulSoup
 from enum import Enum
 from aiohttp import web
+from lib2to3.pgen2.token import ASYNC
         
 class region(Enum):
     na1 = "1"
@@ -43,13 +44,13 @@ class positions(Enum):
     none = "6"
     
 class data(Enum):
-    perks = "0"
-    summoner_spells = "1"
-    start_items = "2"
-    mythic_and_core = "3"
-    abilities = "4"
-    other_items = "5"
-    shards = "8"
+    perks = 0
+    summoner_spells = 1
+    start_items = 2
+    mythic_and_core = 3
+    abilities = 4
+    other_items = 5
+    shards = 8
 
 class stats():
     def __init__(self):
@@ -57,7 +58,6 @@ class stats():
         
     @alru_cache(maxsize=1)
     async def ddragon_data():
-        loop = asyncio.get_event_loop()
         async with aiohttp.ClientSession() as session:
             async with session.get("https://static.u.gg/assets/lol/riot_patch_update/prod/versions.json") as lolVersion:
                 ddragon_version = json.loads(await lolVersion.text())[0]
@@ -81,6 +81,7 @@ class stats():
         async with aiohttp.ClientSession() as session2:
             async with session2.get(f"{baseOverviewUrl}/{statsVersion}/overview/{uggLoLVersion}/{gameMode}/{championId}/{overviewVersion}.json") as URL:
                 page = json.loads(await URL.text())
+                
         return page
     
     @alru_cache(maxsize=5)
@@ -90,7 +91,7 @@ class stats():
         async with aiohttp.ClientSession() as session:
             async with session.get(f"https://u.gg/lol/champions/{champ}/build{lane}") as site:
                 ugg_html = await site.text()
-                ugg = BeautifulSoup(ugg_html, 'html.parser')
+                ugg = BeautifulSoup(ugg_html, 'lxml')
                 site_array = ugg.find_all('div', class_='value')
                 return site_array
     
@@ -122,22 +123,17 @@ class UGG():
         async with aiohttp.ClientSession() as session:
             async with session.get(f"https://ddragon.leagueoflegends.com/cdn/{ddragon_version}/data/en_US/runesReforged.json") as dd_runes:
                 runes_json = json.loads(await dd_runes.text())
-                
-        rune_ids = (await stats.stats(name=name))[region[regions.lower()].value][tiers[ranks.lower()].value][positions[role.lower()].value][0][0][4]
-        trees = (await stats.stats(name=name))[region[regions.lower()].value][tiers[ranks.lower()].value][positions[role.lower()].value][0][0]
+  
+        trees = (await stats.stats(name=name))[region[regions.lower()].value][tiers[ranks.lower()].value][positions[role.lower()].value][0][data.perks.value]
+        rune_ids = trees[4]
         runes_1 = []
         runes_2 = []
         
-        for y in range(6):
-            for tree in runes_json:
-                for slots_pos, slots in enumerate(tree["slots"]):
-                    for rune_data in slots["runes"]:
-                        if tree["id"] == trees[2]:
-                            if rune_ids[y] == rune_data["id"]:
-                                runes_1.insert(slots_pos, rune_data['name'])
-                        if tree["id"] == trees[3]:
-                            if rune_ids[y] == rune_data["id"]:
-                                runes_2.insert(slots_pos - 1, rune_data['name'])
+        for tree in runes_json: 
+            if tree['id'] == trees[2]:
+                [runes_1.insert(slots_pos, rune_data['name']) for slots_pos, slots in enumerate(tree["slots"]) for rune_data in slots['runes'] for y in range(6) if rune_ids[y] == rune_data['id']]
+            elif tree['id'] == trees[3]:
+                [runes_2.insert(slots_pos - 1, rune_data['name']) for slots_pos, slots in enumerate(tree["slots"]) for rune_data in slots['runes'] for y in range(6) if rune_ids[y] == rune_data['id']]
 
         runes = runes_1 + runes_2
         return runes
@@ -153,22 +149,18 @@ class UGG():
         start = []
         core = []
         last_set = set()
+        
+        
         for z in items_json['data']:
-            for y in range(2, 4):
-                for i in items[y][2]:
-                    if str(i) == z:
-                        if y == 2:
-                            start.append(items_json['data'][z]['name'])
-                        else:
-                            core.append(items_json['data'][z]['name'])
-            else: 
-                for x in range(3):
-                    for y in range(3):
-                        try:
-                            if str(items[5][x][y][0]) == z:
-                                last_set.add(items_json['data'][z]['name'])            
-                        except:
-                            pass
+            [start.append(items_json['data'][z]['name']) for i in items[2][2] if str(i) == z]
+            [core.append(items_json['data'][z]['name']) for i in items[3][2] if str(i) == z]
+            for x in range(3):
+                for y in range(3):
+                    try:
+                        if str(items[data.other_items.value][x][y][0]) == z:
+                            last_set.add(items_json['data'][z]['name'])
+                    except: pass
+
         last = list(last_set)
         Items = [start, core, last]
         
@@ -176,7 +168,7 @@ class UGG():
         
     @alru_cache(maxsize=1)
     async def Shards(name, role, ranks='platinum_plus', regions='world'):
-        stat_shard_id = (await stats.stats(name=name))[region[regions.lower()].value][tiers[ranks.lower()].value][positions[role.lower()].value][0][8][2]
+        stat_shard_id = (await stats.stats(name=name))[region[regions.lower()].value][tiers[ranks.lower()].value][positions[role.lower()].value][0][data.shards.value][2]
         stat_shard = []
         for s in stat_shard_id:
             match s:
@@ -190,5 +182,5 @@ class UGG():
     
     @alru_cache(maxsize=5)
     async def Abilities(name, role, ranks='platinum_plus', regions='world'):
-        abilities = (await stats.stats(name=name))[region[regions.lower()].value][tiers[ranks.lower()].value][positions[role.lower()].value][0][4][2]
+        abilities = (await stats.stats(name=name))[region[regions.lower()].value][tiers[ranks.lower()].value][positions[role.lower()].value][0][data.abilities.value][2]
         return abilities
