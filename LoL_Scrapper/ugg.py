@@ -148,8 +148,8 @@ class UGG():
         last_set = set()
 
         for z in items_json['data']:
-            [start.append(items_json['data'][z]['name']) for i in items[2][2] if str(i) == z]
-            [core.append(items_json['data'][z]['name']) for i in items[3][2] if str(i) == z]
+            [start.append(items_json['data'][z]['name']) for i in items[data.start_items.value][2] if str(i) == z]
+            [core.append(items_json['data'][z]['name']) for i in items[data.mythic_and_core.value][2] if str(i) == z]
             {last_set.add(items_json['data'][z]['name']) for x in range(3) for y in range(len(items[data.other_items.value][x])) if str(items[data.other_items.value][x][y][0]) == z}
 
         Items = [start, core, list(last_set)]
