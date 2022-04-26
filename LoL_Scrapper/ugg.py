@@ -79,19 +79,18 @@ class stats():
         async with aiohttp.ClientSession() as session2:
             async with session2.get(f"{baseOverviewUrl}/{statsVersion}/overview/{uggLoLVersion}/{gameMode}/{championId}/{overviewVersion}.json") as URL:
                 page = json.loads(await URL.text())
-                
         return page
     
     @alru_cache(maxsize=5)
-    async def uugsite(name, role='', rank='platinum_plus', region='world'):
+    async def uggsite(name, role='', rank='platinum_plus', region='world'):
         champ = re.sub(r'\W+', '', name.lower())
         lane = "?rank=" + rank.lower() + "&region=" + region.lower() + '&role=' + role.lower()
         async with aiohttp.ClientSession() as session:
             async with session.get(f"https://u.gg/lol/champions/{champ}/build{lane}") as site:
                 ugg_html = await site.text()
                 ugg = BeautifulSoup(ugg_html, 'lxml')
-                site_array = ugg.find_all('div', class_='value')
-        return site_array
+                stats_array = ugg.find_all('div', class_='value')
+        return stats_array
     
 class UGG():
     def __init__(self):
@@ -100,19 +99,19 @@ class UGG():
     #We use scraping because this data does not exist in U.GGs JSON files
     #The underlying array is cached, so well the initial scrape takes a bit, the following uses are quite quick
     async def Win_rate(name, role='', rank='platinum_plus', region='world'):
-        wr  = await stats.uugsite(name, role, rank, region)
+        wr  = await stats.uggsite(name, role, rank, region)
         return wr[0].text
     
     async def Total_matches(name, role='', rank='platinum_plus', region='world'):
-        pr = await stats.uugsite(name, role, rank, region)
+        pr = await stats.uggsite(name, role, rank, region)
         return pr[1].text   
     
     async def Pick_rate(name, role='', rank='platinum_plus', region='world'):
-        pr = await stats.uugsite(name, role, rank, region)
+        pr = await stats.uggsite(name, role, rank, region)
         return pr[2].text
     
     async def Ban_rate(name, role='', rank='platinum_plus', region='world'): 
-        br = await stats.uugsite(name, role, rank, region)
+        br = await stats.uggsite(name, role, rank, region)
         return br[3].text
     
     @alru_cache(maxsize=1)
@@ -147,21 +146,13 @@ class UGG():
         start = []
         core = []
         last_set = set()
-        
 
         for z in items_json['data']:
             [start.append(items_json['data'][z]['name']) for i in items[2][2] if str(i) == z]
             [core.append(items_json['data'][z]['name']) for i in items[3][2] if str(i) == z]
-            for x in range(3):
-                for y in range(3):
-                    try:
-                        if str(items[data.other_items.value][x][y][0]) == z:
-                            last_set.add(items_json['data'][z]['name'])
-                    except: pass
+            {last_set.add(items_json['data'][z]['name']) for x in range(3) for y in range(len(items[data.other_items.value][x])) if str(items[data.other_items.value][x][y][0]) == z}
 
-        last = list(last_set)
-        Items = [start, core, last]
-        
+        Items = [start, core, list(last_set)]
         return Items
         
     @alru_cache(maxsize=1)
