@@ -2,6 +2,7 @@ import re, aiohttp, ujson as json
 from async_lru import alru_cache
 from bs4 import BeautifulSoup
 from enum import Enum
+import asyncio
         
 class region(Enum):
     na1 = "1"
@@ -86,33 +87,47 @@ class stats():
         champ = re.sub(r'\W+', '', name.lower())
         lane = "?rank=" + rank.lower() + "&region=" + region.lower() + '&role=' + role.lower()
         async with aiohttp.ClientSession() as session:
-            async with session.get(f"https://u.gg/lol/champions/{champ}/build{lane}") as site:
+            async with session.get(f"https://u.gg/lol/champions/{champ}/build{lane}") as site:         
                 ugg_html = await site.text()
-                ugg = BeautifulSoup(ugg_html, 'lxml')
-                stats_array = ugg.find_all('div', class_='value')
+        return ugg_html
+    
+    
+    @alru_cache(maxsize=1)
+    async def value_extract(name, role='', rank='platinum_plus', region='world'):
+        html = await stats.uggsite(name=name, role=role, rank=rank, region=region)
+        ugg = BeautifulSoup(html, 'lxml')
+        stats_array = ugg.find_all('div', class_='value')
         return stats_array
     
 class UGG():
     def __init__(self):
         self
-    #Data is gotten in the order 'Win rate, Rank, Pick rate, ban rate, matches' when using find all
+    #Data is gotten in the order 'Tier, Win rate, Rank, Pick rate, ban rate, matches' when using find all
     #We use scraping because this data does not exist in U.GGs JSON files
     #The underlying array is cached, so well the initial scrape takes a bit, the following uses are quite quick
+    async def Tier(name, role='', rank='platinum_plus', region='world'):
+        tier  = await stats.value_extract(name, role, rank, region)
+        return tier[0].text
+    
     async def Win_rate(name, role='', rank='platinum_plus', region='world'):
-        wr  = await stats.uggsite(name, role, rank, region)
-        return wr[0].text
+        wr  = await stats.value_extract(name, role, rank, region)
+        return wr[1].text
+    
+    async def Rank(name, role='', rank='platinum_plus', region='world'):
+        rank  = await stats.value_extract(name, role, rank, region)
+        return rank[2].text
     
     async def Total_matches(name, role='', rank='platinum_plus', region='world'):
-        pr = await stats.uggsite(name, role, rank, region)
-        return pr[1].text   
+        pr = await stats.value_extract(name, role, rank, region)
+        return pr[5].text   
     
     async def Pick_rate(name, role='', rank='platinum_plus', region='world'):
-        pr = await stats.uggsite(name, role, rank, region)
-        return pr[2].text
+        pr = await stats.value_extract(name, role, rank, region)
+        return pr[3].text
     
     async def Ban_rate(name, role='', rank='platinum_plus', region='world'): 
-        br = await stats.uggsite(name, role, rank, region)
-        return br[3].text
+        br = await stats.value_extract(name, role, rank, region)
+        return br[4].text
     
     @alru_cache(maxsize=1)
     async def Runes(name, role, ranks='platinum_plus', regions='world'):
@@ -146,12 +161,14 @@ class UGG():
         start = []
         core = []
         last_set = set()
-
-        for z in items_json['data']:
+        
+        print(items[2])
+        for z in items_json['data']:\
+            #These can be empty. This is the fault of U.GG, not me.
             [start.append(items_json['data'][z]['name']) for i in items[data.start_items.value][2] if str(i) == z]
             [core.append(items_json['data'][z]['name']) for i in items[data.mythic_and_core.value][2] if str(i) == z]
             {last_set.add(items_json['data'][z]['name']) for x in range(3) for y in range(len(items[data.other_items.value][x])) if str(items[data.other_items.value][x][y][0]) == z}
-
+            
         Items = [start, core, list(last_set)]
         return Items
         
@@ -173,4 +190,3 @@ class UGG():
     async def Abilities(name, role, ranks='platinum_plus', regions='world'):
         abilities = (await stats.stats(name=name))[region[regions.lower()].value][tiers[ranks.lower()].value][positions[role.lower()].value][0][data.abilities.value][2]
         return abilities
-    
