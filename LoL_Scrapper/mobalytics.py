@@ -25,7 +25,7 @@ async def rates_cache(champion: str, role: str):
 
 @alru_cache(maxsize=1)
 async def items(champion: str, role: str):
-    item = (await soup(champion, role)).find_all("img", class_="m-1dde13n")
+    item = (await soup(champion, role)).find_all("img", class_="m-10vuljw")
     items = []
     [items.append(entry["alt"]) for entry in item if entry["alt"] not in items]
     return items
@@ -52,25 +52,26 @@ class mobalytics():
     
     @alru_cache(maxsize=1)
     async def items(champion: str, role: str):
-        mythic = (await soup(champion, role)).find("img", class_="m-8zo0oi")["alt"]
+        mythic = (await soup(champion, role)).find("img", class_="m-g620l3")["alt"]
         i = await items(champion, role)
         s = i.index("Stealth Ward") + 1
         b = i.index("Boots") + 1
         
         async def starting():
-            start = [i[y] for y in range(s)]
+            start = [i[:s]]
             return start
         
         async def early():
-            early = [i[y] for y in range(s, b)]
+            early = [i[s:b]]
             return early
         async def core():
-            core = [i[y] for y in range(b, b + 2)]
+            core = [i[b:b+2]]
             core.insert(0, mythic)
             return core
         async def final():
-            final = [i[y] for y in range(b + 2, b + 5)]
+            final = [i[b+2:b+5]]
             return final
+
         x = [(await starting()), (await early()), (await core()), (await final())]
         return x
     
