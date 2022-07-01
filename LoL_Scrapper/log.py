@@ -1,19 +1,20 @@
-import json, requests
+import json, aiohttp
 from bs4 import BeautifulSoup
 
 class __internal__:
     def __init__(self) -> None:
         self
 
-    def soup(link, champ: str):
+    async def soup(link, champ: str):
         champname = champ.lower()
         url = f"https://www.leagueofgraphs.com/champions/{link}/{champname}"
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.76 Safari/537.36', "Upgrade-Insecure-Requests": "1","DNT": "1","Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language": "en-US,en;q=0.5","Accept-Encoding": "gzip, deflate"}
-        response = requests.get(url, headers=headers)
-        soup = BeautifulSoup(response.text, 'html.parser')
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as website:
+                soup = BeautifulSoup(website.text, 'html.parser')
         return soup
 
-    def ratescache(champ: str, id: str):
+    async def ratescache(champ: str, id: str):
         link = "stats"
         soup = __internal__.soup(link, champ=champ)
         text = soup.find_all(id=id)
@@ -23,7 +24,7 @@ class leagueofgraphs:
     def __init__(self):
         self
 
-    def runes(champ):
+    async def runes(champ):
         link = "runes"
         soup = __internal__.soup(link, champ)
         main = soup.find_all('img', {"style" : "opacity: 1; "})
@@ -32,7 +33,7 @@ class leagueofgraphs:
         secondarytree = [secondary[y]['alt'] for y in range(2)]
         return primarytree + secondarytree
 
-    def items(champ):
+    async def items(champ):
         link = "items"
         soup = __internal__.soup(link, champ)
         boots = ["Berserker's Greaves", "Boots of Swiftness", "Ionian Boots of Lucidity", "Mercury's Treads", "Sorcerer's Shoes", "Plated Steelcaps", "Mobility Boots"]
@@ -51,22 +52,22 @@ class leagueofgraphs:
         other = [names[60 - smallerrow:63 - smallerrow]]
         return start + core + other + [boot[0]]
 
-    def pickrate(champ: str, id: str):
+    async def pickrate(champ: str, id: str):
         id = "graphDD1"
         pr = __internal__.ratescache(champ=champ, id=id)
         return pr
 
-    def winrate(champ: str, id: str):
+    async def winrate(champ: str, id: str):
         id = "graphDD2"
         wr = __internal__.ratescache(champ=champ, id=id)
         return wr
 
-    def banrate(champ: str, id: str):
+    async def banrate(champ: str, id: str):
         id = "graphDD3"
         br = __internal__.ratescache(champ=champ, id=id)
         return br
 
-    def abilities(champ):
+    async def abilities(champ):
         link = "skills-orders"
         soup = __internal__.soup(link=link, champ=champ)
         abilitieshtml = soup.find_all("td")
@@ -88,5 +89,3 @@ class leagueofgraphs:
             if rability != '':
                 abilities[rpos] = rability
         return abilities
-
-print(leagueofgraphs.abilities("Ezreal"))
