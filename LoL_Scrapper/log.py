@@ -1,3 +1,4 @@
+import asyncio
 import json, aiohttp
 from bs4 import BeautifulSoup
 
@@ -9,15 +10,16 @@ class __internal__:
         champname = champ.lower()
         url = f"https://www.leagueofgraphs.com/champions/{link}/{champname}"
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.76 Safari/537.36', "Upgrade-Insecure-Requests": "1","DNT": "1","Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language": "en-US,en;q=0.5","Accept-Encoding": "gzip, deflate"}
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(headers=headers) as session:
             async with session.get(url) as website:
-                soup = BeautifulSoup(website.text, 'html.parser')
+                text = await website.text()
+                soup = BeautifulSoup(text, 'html.parser')
         return soup
 
     async def ratescache(champ: str, id: str):
         link = "stats"
-        soup = __internal__.soup(link, champ=champ)
-        text = soup.find_all(id=id)
+        soup = await __internal__.soup(link, champ=champ)
+        text = soup.find(id=id)
         return text
 
 class leagueofgraphs:
@@ -26,7 +28,7 @@ class leagueofgraphs:
 
     async def runes(champ):
         link = "runes"
-        soup = __internal__.soup(link, champ)
+        soup = await __internal__.soup(link, champ)
         main = soup.find_all('img', {"style" : "opacity: 1; "})
         secondary = soup.find_all('img', {"style" : "opacity: 0.6; opacity:1"})
         primarytree = [main[y]['alt'] for y  in range(4)]
@@ -35,7 +37,7 @@ class leagueofgraphs:
 
     async def items(champ):
         link = "items"
-        soup = __internal__.soup(link, champ)
+        soup = await __internal__.soup(link, champ)
         boots = ["Berserker's Greaves", "Boots of Swiftness", "Ionian Boots of Lucidity", "Mercury's Treads", "Sorcerer's Shoes", "Plated Steelcaps", "Mobility Boots"]
         itemimages = soup.find_all('img', {"height" : "36", "width" : "36", "src" : "//lolg-cdn.porofessor.gg/img/s/fond_sprite.png?v=5", "tooltip-class" : "itemTooltip"})
         names = [itemimages[y]["alt"] for y in range (len(itemimages))]
@@ -52,40 +54,33 @@ class leagueofgraphs:
         other = [names[60 - smallerrow:63 - smallerrow]]
         return start + core + other + [boot[0]]
 
-    async def pickrate(champ: str, id: str):
+    async def pickrate(champ: str):
         id = "graphDD1"
-        pr = __internal__.ratescache(champ=champ, id=id)
-        return pr
+        pr = await __internal__.ratescache(champ=champ, id=id)
+        return pr.text.strip()
 
-    async def winrate(champ: str, id: str):
+    async def winrate(champ: str):
         id = "graphDD2"
-        wr = __internal__.ratescache(champ=champ, id=id)
-        return wr
+        wr = await __internal__.ratescache(champ=champ, id=id)
+        return wr.text.strip()
 
-    async def banrate(champ: str, id: str):
+    async def banrate(champ: str):
         id = "graphDD3"
-        br = __internal__.ratescache(champ=champ, id=id)
-        return br
+        br = await __internal__.ratescache(champ=champ, id=id)
+        return br.text.strip()
 
     async def abilities(champ):
         link = "skills-orders"
-        soup = __internal__.soup(link=link, champ=champ)
+        soup = await __internal__.soup(link=link, champ=champ)
         abilitieshtml = soup.find_all("td")
         q = [abilitieshtml[y].text.strip() for y in range(1, 19)]
         w = [abilitieshtml[y].text.strip() for y in range(22, 40)]
         e = [abilitieshtml[y].text.strip() for y in range(41, 59)]
         r = [abilitieshtml[y].text.strip() for y in range(60, 78)]
+        qwer = [q, w, e, r]
         abilities = [1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-        for qpos, qability in enumerate(q):
-            if qability != '':
-                abilities[qpos] = qability
-        for wpos, wability in enumerate(w):
-            if wability != '':
-                abilities[wpos] = wability
-        for epos, eability in enumerate(e):
-            if eability != '':
-                abilities[epos] = eability
-        for rpos, rability in enumerate(r):
-            if rability != '':
-                abilities[rpos] = rability
+        for y in range(4):
+            for abilitypos, abilityname in enumerate(qwer[y]):
+                if abilityname != '':
+                    abilities[abilitypos] = abilityname
         return abilities
