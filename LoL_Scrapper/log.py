@@ -1,5 +1,4 @@
-import asyncio
-import json, aiohttp
+import aiohttp
 from bs4 import BeautifulSoup
 
 class __internal__:
