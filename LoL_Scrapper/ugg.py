@@ -1,8 +1,7 @@
-import re, aiohttp, ujson as json
+import aiohttp, ujson as json
 from async_lru import alru_cache
-from bs4 import BeautifulSoup
 from enum import Enum
-import asyncio
+import private
         
 class region(Enum):
     na1 = "1"
@@ -55,13 +54,13 @@ class __stats__():
     def __init__(self):
         self
         
-    @alru_cache(maxsize=1)
-    async def ddragon_data():
-        async with aiohttp.ClientSession() as session:
-            async with session.get("https://static.u.gg/assets/lol/riot_patch_update/prod/versions.json") as lolVersion:
-                ddragon_version = json.loads(await lolVersion.text())[0]
-
-        return ddragon_version
+#    @alru_cache(maxsize=1)
+#    async def ddragon_data():
+#        async with aiohttp.ClientSession() as session:
+#            async with session.get("https://static.u.gg/assets/lol/riot_patch_update/prod/versions.json") as lolVersion:
+#                ddragon_version = json.loads(await lolVersion.text())[0]
+#
+#        return ddragon_version
     
     @alru_cache(maxsize=1)
     async def stats(name):
@@ -69,9 +68,9 @@ class __stats__():
         overviewVersion = '1.5.0'
         baseOverviewUrl = 'https://stats2.u.gg/lol'
         gameMode = "ranked_solo_5x5"
-        ddragon_version = (await __stats__.ddragon_data())
+        ddragon_version = (await private.ddragondata())
         lolVersion = ddragon_version.split(".")
-        champName = re.sub(r'\W+', '', name.lower().title().strip())
+        champName = await private.champnamecleaner(name=name)
         async with aiohttp.ClientSession() as session:
             async with session.get(f"https://ddragon.leagueoflegends.com/cdn/{ddragon_version}/data/en_US/champion.json") as champJson:
                 championId = json.loads(await champJson.text())["data"][f"{champName}"]["key"]
@@ -82,21 +81,14 @@ class __stats__():
                 page = json.loads(await URL.text())
         return page
     
-    @alru_cache(maxsize=5)
-    async def uggsite(name, role='', rank='platinum_plus', region='world'):
-        champ = re.sub(r'\W+', '', name.lower())
-        lane = "?rank=" + rank.lower() + "&region=" + region.lower() + '&role=' + role.lower()
-        async with aiohttp.ClientSession() as session:
-            async with session.get(f"https://u.gg/lol/champions/{champ}/build{lane}") as site:         
-                ugg_html = await site.text()
-        return ugg_html
-    
     
     @alru_cache(maxsize=1)
-    async def value_extract(name, role='', rank='platinum_plus', region='world'):
-        html = await __stats__.uggsite(name=name, role=role, rank=rank, region=region)
-        ugg = BeautifulSoup(html, 'lxml')
-        stats_array = ugg.find_all('div', class_='value')
+    async def value_extract(name: str, role='', rank='platinum_plus', region='world'):
+        champ = await private.champnamecleaner(name=name)
+        lane = "?rank=" + rank.lower() + "&region=" + region.lower() + '&role=' + role.lower()
+        url = f"https://u.gg/lol/champions/{champ}/build{lane}"
+        soup = await private.beautifulsoup(url=url)
+        stats_array = soup.find_all('div', class_='value')
         return stats_array
     
 class UGG():

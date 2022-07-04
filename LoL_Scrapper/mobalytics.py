@@ -1,30 +1,26 @@
-import requests, re, asyncio, aiohttp
 from async_lru import alru_cache
-from bs4 import BeautifulSoup
+import private
 
 @alru_cache(maxsize=1)
-async def soup_cache(champion: str, role: str) -> BeautifulSoup:
-    async with aiohttp.ClientSession() as session:
-        async with session.get(f"https://app.mobalytics.gg/lol/champions/{champion}/build/{role}") as website:
-            y = await website.text()
-            x = BeautifulSoup(y, "html.parser")
-    return x
-
-@alru_cache(maxsize=1)
-async def soup(champion: str, role: str):
-    soup = await (soup_cache(champion, role))
+async def soup(champion: str, role: str = ''):
+    champname = await private.champnamecleaner(name=champion)
+    lane = role.lower()
+    url = f"https://app.mobalytics.gg/lol/champions/{champname}/build/{lane}"
+    soup = await private.beautifulsoup(url=url)
     matches = soup.find("div", class_="m-j0296l")
     if matches is not None:
-        soup = await (soup_cache(champion, " "))
+        lane = ' '
+        url = f"https://app.mobalytics.gg/lol/champions/{champname}/build/{lane}"
+        soup = await private.beautifulsoup(url=url)
     return soup
 
 @alru_cache(maxsize=1)
-async def rates_cache(champion: str, role: str):
+async def rates_cache(champion: str, role: str = ''):
     rates = (await soup(champion, role)).find_all("td", class_="m-m7fsih")
     return rates
 
 @alru_cache(maxsize=1)
-async def items(champion: str, role: str):
+async def items(champion: str, role: str = ''):
     item = (await soup(champion, role)).find_all("img", class_="m-10vuljw")
     items = []
     [items.append(entry["alt"]) for entry in item if entry["alt"] not in items]
@@ -35,7 +31,7 @@ class mobalytics():
         self
     
     @alru_cache(maxsize=1)
-    async def runes(champion: str, role: str):
+    async def runes(champion: str, role: str = ''):
         async def KeyStone():
             keystone = (await soup(champion, role)).find("img", class_="m-u9bqoh")
             return keystone["alt"]
@@ -51,16 +47,14 @@ class mobalytics():
         return y
     
     @alru_cache(maxsize=1)
-    async def items(champion: str, role: str):
+    async def items(champion: str, role: str = ''):
         mythic = (await soup(champion, role)).find("img", class_="m-g620l3")["alt"]
         i = await items(champion, role)
         s = i.index("Stealth Ward") + 1
         b = i.index("Boots") + 1
-        
         async def starting():
             start = [i[:s]]
             return start
-        
         async def early():
             early = [i[s:b]]
             return early
@@ -71,32 +65,32 @@ class mobalytics():
         async def final():
             final = [i[b+2:b+5]]
             return final
-
         x = [(await starting()), (await early()), (await core()), (await final())]
         return x
     
-    async def tier(champion: str, role: str):
+    async def tier(champion: str, role: str = ''):
         x = await rates_cache(champion, role)
         return x[0].text
     
-    async def winrate(champion: str, role: str):
+    async def winrate(champion: str, role: str = ''):
         x = await rates_cache(champion, role)
         return x[1].text
     
-    async def pickrate(champion: str, role: str):
+    async def pickrate(champion: str, role: str = ''):
         x = await rates_cache(champion, role)
         return x[2].text
     
-    async def banrate(champion: str, role: str):
+    async def banrate(champion: str, role: str = ''):
         x = await rates_cache(champion, role)
         return x[3].text
     
-    async def abilities(champion: str, role: str):
+    #Only the position of the div is needed here, hence why yy remains unnamed and unused
+    async def abilities(champion: str, role: str = ''):
         x = (await soup(champion, role)).find_all("div", class_="m-af8mp8")
         abilities = [x[y].text for y, yy in enumerate(x)]
         return abilities
     
-    async def shards(champion: str, role: str):
+    async def shards(champion: str, role: str = ''):
         x = (await soup(champion, role)).find_all("img", class_="m-j7ixa3")
         shards = [x[y]["alt"] for y, yy in enumerate(x)]
         return shards

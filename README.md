@@ -10,12 +10,23 @@ Examples can be found in ./examples/{site-name}, but should be mostly the same b
 
 Example for [u.gg](https://u.gg/):
 ```python
-print(asyncio.run(ugg.UGG.WinRate(self, "Annie", "Mid")))
+from LoL_Scrapper import ugg
+
+#async
+async def winrate():
+    await UGG.Win_rate("Annie")
+
+#sync
+def winrate():
+    loop = asyncio.get_event_loop()
+    winrate = UGG.Win_rate("Annie")
+    loop.run_until_complete(winrate)
+    
 #Returns the current winrate for Annie in the mid lane
 ```
 ## Currently Supports:
 - [X] [U.gg](https://u.gg/)
-- [x] [Mobalytics.gg](https://mobalytics.gg/)
+- [X] [Mobalytics.gg](https://mobalytics.gg/)
 - [ ] [OP.gg](https://na.op.gg/)
 - [ ] [Champion.gg](https://champion.gg/)
 - [ ] [LoLalytics.com](https://lolalytics.com/)
