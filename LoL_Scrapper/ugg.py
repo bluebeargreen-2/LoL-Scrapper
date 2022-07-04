@@ -53,14 +53,6 @@ class data(Enum):
 class __stats__():
     def __init__(self):
         self
-        
-#    @alru_cache(maxsize=1)
-#    async def ddragon_data():
-#        async with aiohttp.ClientSession() as session:
-#            async with session.get("https://static.u.gg/assets/lol/riot_patch_update/prod/versions.json") as lolVersion:
-#                ddragon_version = json.loads(await lolVersion.text())[0]
-#
-#        return ddragon_version
     
     @alru_cache(maxsize=1)
     async def stats(name):
