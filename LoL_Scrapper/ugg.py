@@ -1,3 +1,4 @@
+import asyncio
 import aiohttp, ujson as json
 from async_lru import alru_cache
 from enum import Enum
@@ -70,9 +71,9 @@ class __stats__():
     
         async with aiohttp.ClientSession() as session2:
             async with session2.get(f"{baseOverviewUrl}/{statsVersion}/overview/{uggLoLVersion}/{gameMode}/{championId}/{overviewVersion}.json") as URL:
+                print(f"{baseOverviewUrl}/{statsVersion}/overview/{uggLoLVersion}/{gameMode}/{championId}/{overviewVersion}.json")
                 page = json.loads(await URL.text())
         return page
-    
     
     @alru_cache(maxsize=1)
     async def value_extract(name: str, role='', rank='platinum_plus', region='world'):
@@ -83,38 +84,38 @@ class __stats__():
         stats_array = soup.find_all('div', class_='value')
         return stats_array
     
-class UGG():
+class ugg():
     def __init__(self):
         self
     #Data is gotten in the order 'Tier, Win rate, Rank, Pick rate, ban rate, matches' when using find all
     #We use scraping because this data does not exist in U.GGs JSON files
     #The underlying array is cached, so well the initial scrape takes a bit, the following uses are quite quick
-    async def Tier(name, role='', rank='platinum_plus', region='world'):
+    async def tiers(name, role='', rank='platinum_plus', region='world'):
         tier  = await __stats__.value_extract(name, role, rank, region)
         return tier[0].text
     
-    async def Win_rate(name, role='', rank='platinum_plus', region='world'):
+    async def winrate(name, role='', rank='platinum_plus', region='world'):
         wr  = await __stats__.value_extract(name, role, rank, region)
         return wr[1].text
     
-    async def Rank(name, role='', rank='platinum_plus', region='world'):
+    async def rank(name, role='', rank='platinum_plus', region='world'):
         rank  = await __stats__.value_extract(name, role, rank, region)
         return rank[2].text
     
-    async def Total_matches(name, role='', rank='platinum_plus', region='world'):
+    async def totalmatches(name, role='', rank='platinum_plus', region='world'):
         pr = await __stats__.value_extract(name, role, rank, region)
         return pr[5].text   
     
-    async def Pick_rate(name, role='', rank='platinum_plus', region='world'):
+    async def pickrate(name, role='', rank='platinum_plus', region='world'):
         pr = await __stats__.value_extract(name, role, rank, region)
         return pr[3].text
     
-    async def Ban_rate(name, role='', rank='platinum_plus', region='world'): 
+    async def banrate(name, role='', rank='platinum_plus', region='world'): 
         br = await __stats__.value_extract(name, role, rank, region)
         return br[4].text
     
     @alru_cache(maxsize=1)
-    async def Runes(name, role, ranks='platinum_plus', regions='world'):
+    async def runes(name, role, ranks='platinum_plus', regions='world'):
         ddragon_version = (await __stats__.ddragon_data())
         async with aiohttp.ClientSession() as session:
             async with session.get(f"https://ddragon.leagueoflegends.com/cdn/{ddragon_version}/data/en_US/runesReforged.json") as dd_runes:
@@ -135,7 +136,7 @@ class UGG():
         return runes
     
     @alru_cache(maxsize=1)
-    async def Items(name, role, ranks='platinum_plus', regions='world'):
+    async def items(name, role, ranks='platinum_plus', regions='world'):
         ddragon_version = (await __stats__.ddragon_data())
         async with aiohttp.ClientSession() as session:
             async with session.get(f"https://ddragon.leagueoflegends.com/cdn/{ddragon_version}/data/en_US/item.json") as dd_items:
@@ -157,7 +158,7 @@ class UGG():
         return Items
         
     @alru_cache(maxsize=1)
-    async def Shards(name, role, ranks='platinum_plus', regions='world'):
+    async def shards(name, role, ranks='platinum_plus', regions='world'):
         stat_shard_id = (await __stats__.stats(name=name))[region[regions.lower()].value][tiers[ranks.lower()].value][positions[role.lower()].value][0][data.shards.value][2]
         stat_shard = []
         for s in stat_shard_id:
@@ -171,6 +172,6 @@ class UGG():
         return stat_shard
     
     @alru_cache(maxsize=5)
-    async def Abilities(name, role, ranks='platinum_plus', regions='world'):
+    async def abilities(name, role, ranks='platinum_plus', regions='world'):
         abilities = (await __stats__.stats(name=name))[region[regions.lower()].value][tiers[ranks.lower()].value][positions[role.lower()].value][0][data.abilities.value][2]
         return abilities
