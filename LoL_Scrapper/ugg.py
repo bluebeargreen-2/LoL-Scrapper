@@ -1,3 +1,4 @@
+import asyncio
 import aiohttp, ujson as json
 from async_lru import alru_cache
 from enum import Enum
@@ -121,8 +122,8 @@ class ugg():
     #Take the number of picks, bans, etc, divied by the number of matches, rounded to the 3nd place, multipled by 100
     async def winrate(name, role: str, ranks='platinum_plus', regions='world'):
         json = (await __stats__.rankings(name=name))[region[regions.lower()].value][tiers[ranks.lower()].value][positions[role.lower()].value]
-        wr = json[stats.wins.value] / json[stats.matches.value]
-        return f"{round(wr, 3) * 100}%"
+        wr: float = json[stats.wins.value] / json[stats.matches.value]
+        return f"{str(round(wr * 100, 1))}%"
     
     async def rank(name, role: str, ranks='platinum_plus', regions='world'):
         json = (await __stats__.rankings(name=name))[region[regions.lower()].value][tiers[ranks.lower()].value][positions[role.lower()].value]
@@ -136,12 +137,12 @@ class ugg():
     async def pickrate(name, role: str, ranks='platinum_plus', regions='world'):
         json = (await __stats__.rankings(name=name))[region[regions.lower()].value][tiers[ranks.lower()].value][positions[role.lower()].value]
         pr = json[stats.matches.value] / json[stats.total_matches.value]
-        return f"{round(pr, 3) * 100}%"
+        return f"{str(round(pr * 100, 1))}%"
     
     async def banrate(name, role: str, ranks='platinum_plus', regions='world'): 
         json = (await __stats__.rankings(name=name))[region[regions.lower()].value][tiers[ranks.lower()].value][positions[role.lower()].value]
         br = json[stats.bans.value] / json[stats.total_matches.value]
-        return f"{round(br, 3) * 100}%"
+        return f"{str(round(br * 100, 1))}%"
     
     @alru_cache(maxsize=1)
     async def runes(name, role: str, ranks='platinum_plus', regions='world'):
