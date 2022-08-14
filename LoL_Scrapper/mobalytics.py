@@ -2,7 +2,7 @@ from async_lru import alru_cache
 import private
 
 @alru_cache(maxsize=1)
-async def soup(champion: str, role: str = ''):
+async def soup_catch(champion: str, role: str = ''):
     champname = await private.champnamecleaner(name=champion)
     lane = role.lower()
     url = f"https://app.mobalytics.gg/lol/champions/{champname}/build/{lane}"
@@ -16,12 +16,12 @@ async def soup(champion: str, role: str = ''):
 
 @alru_cache(maxsize=1)
 async def rates_cache(champion: str, role: str = ''):
-    rates = (await soup(champion, role)).find_all("td", class_="m-m7fsih")
+    rates = (await soup_catch(champion, role)).find_all("td", class_="m-m7fsih")
     return rates
 
 @alru_cache(maxsize=1)
 async def items(champion: str, role: str = ''):
-    item = (await soup(champion, role)).find_all("img", class_="m-10vuljw")
+    item = (await soup_catch(champion, role)).find_all("img", class_="m-10vuljw")
     items = []
     [items.append(entry["alt"]) for entry in item if entry["alt"] not in items]
     return items
@@ -33,11 +33,11 @@ class mobalytics():
     @alru_cache(maxsize=1)
     async def runes(champion: str, role: str = ''):
         async def KeyStone():
-            keystone = (await soup(champion, role)).find("img", class_="m-u9bqoh")
+            keystone = (await soup_catch(champion, role)).find("img", class_="m-u9bqoh")
             return keystone["alt"]
         async def Tree():
             runes = []
-            tree = (await soup(champion, role)).find_all("img", class_="m-oa6z1e")
+            tree = (await soup_catch(champion, role)).find_all("img", class_="m-oa6z1e")
             for rune in tree:
                 runes.append(rune["alt"])
             return runes
@@ -48,7 +48,7 @@ class mobalytics():
     
     @alru_cache(maxsize=1)
     async def items(champion: str, role: str = ''):
-        mythic = (await soup(champion, role)).find("img", class_="m-g620l3")["alt"]
+        mythic = (await soup_catch(champion, role)).find("img", class_="m-g620l3")["alt"]
         i = await items(champion, role)
         s = i.index("Stealth Ward") + 1
         b = i.index("Boots") + 1
@@ -86,11 +86,11 @@ class mobalytics():
     
     #Only the position of the div is needed here, hence why yy remains unnamed and unused
     async def abilities(champion: str, role: str = ''):
-        x = (await soup(champion, role)).find_all("div", class_="m-af8mp8")
+        x = (await soup_catch(champion, role)).find_all("div", class_="m-af8mp8")
         abilities = [x[y].text for y, yy in enumerate(x)]
         return abilities
     
     async def shards(champion: str, role: str = ''):
-        x = (await soup(champion, role)).find_all("img", class_="m-j7ixa3")
+        x = (await soup_catch(champion, role)).find_all("img", class_="m-j7ixa3")
         shards = [x[y]["alt"] for y, yy in enumerate(x)]
         return shards
