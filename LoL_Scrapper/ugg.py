@@ -1,7 +1,7 @@
 import aiohttp, ujson as json
 from async_lru import alru_cache
 from enum import Enum
-import private
+from LoL_Scrapper import private
         
 class region(Enum):
     na1 = "1"

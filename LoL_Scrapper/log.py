@@ -1,4 +1,4 @@
-import private
+from LoL_Scrapper import private
 
 class __internal__:
     def __init__(self) -> None:

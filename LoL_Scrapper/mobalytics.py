@@ -1,5 +1,5 @@
 from async_lru import alru_cache
-import private
+from LoL_Scrapper import private
 
 @alru_cache(maxsize=1)
 async def soup_catch(champion: str, role: str = ''):
