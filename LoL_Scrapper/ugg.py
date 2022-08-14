@@ -2,7 +2,6 @@ import aiohttp, ujson as json
 from async_lru import alru_cache
 from enum import Enum
 import private
-from requests_html import HTMLSession
         
 class region(Enum):
     na1 = "1"
