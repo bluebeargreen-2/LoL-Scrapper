@@ -29,7 +29,7 @@ async def items(champion: str, role: str = ''):
 class mobalytics():
     def __init__(self):
         self
-    
+
     @alru_cache(maxsize=1)
     async def runes(champion: str, role: str = ''):
         async def KeyStone():
@@ -45,7 +45,7 @@ class mobalytics():
         y = await Tree()
         y.insert(0, x)
         return y
-    
+
     @alru_cache(maxsize=1)
     async def items(champion: str, role: str = ''):
         mythic = (await soup_catch(champion, role)).find("img", class_="m-g620l3")["alt"]
@@ -67,29 +67,29 @@ class mobalytics():
             return final
         x = [(await starting()), (await early()), (await core()), (await final())]
         return x
-    
+
     async def tier(champion: str, role: str = ''):
         x = await rates_cache(champion, role)
         return x[0].text
-    
+
     async def winrate(champion: str, role: str = ''):
         x = await rates_cache(champion, role)
         return x[1].text
-    
+
     async def pickrate(champion: str, role: str = ''):
         x = await rates_cache(champion, role)
         return x[2].text
-    
+
     async def banrate(champion: str, role: str = ''):
         x = await rates_cache(champion, role)
         return x[3].text
-    
+
     #Only the position of the div is needed here, hence why yy remains unnamed and unused
     async def abilities(champion: str, role: str = ''):
         x = (await soup_catch(champion, role)).find_all("div", class_="m-af8mp8")
         abilities = [x[y].text for y, yy in enumerate(x)]
         return abilities
-    
+
     async def shards(champion: str, role: str = ''):
         x = (await soup_catch(champion, role)).find_all("img", class_="m-j7ixa3")
         shards = [x[y]["alt"] for y, yy in enumerate(x)]
