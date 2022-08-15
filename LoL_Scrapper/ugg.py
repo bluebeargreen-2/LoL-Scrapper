@@ -1,4 +1,3 @@
-import asyncio
 import aiohttp, ujson as json
 from async_lru import alru_cache
 from enum import Enum
@@ -103,18 +102,7 @@ class __stats__():
             async with session.get(f"{baseOverviewUrl}/{statsVersion}/rankings/{uggLoLVersion}/{gameMode}/{championId}/{overviewVersion}.json") as URL:
                 page = json.loads(await URL.text())
         return page
-    
-    @alru_cache(maxsize=1)
-    async def value_extract(name: str, role='', rank='platinum_plus', region='world'):
-        champ = await private.champnamecleaner(name=name)
-        lane = "?rank=" + rank.lower() + "&region=" + region.lower() + '&role=' + role.lower()
-        url = f"https://u.gg/lol/champions/{champ.lower()}/build/"
-        print(url)
-        soup = await private.beautifulsoup(url=url)
-        print(soup)
-        stats_array = soup.find_all('div', class_='value')
-        return stats_array
-    
+
 class ugg():
     def __init__(self):
         self
